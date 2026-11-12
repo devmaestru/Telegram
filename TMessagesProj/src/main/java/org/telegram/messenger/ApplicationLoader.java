@@ -214,6 +214,10 @@ public class ApplicationLoader extends Application {
 
                     boolean isSlow = isConnectionSlow();
                     for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                        if (!UserConfig.hasInstance(a) && a != 0) {
+                            if (a > 10) break;
+                            continue;
+                        }
                         ConnectionsManager.getInstance(a).checkConnection();
                         FileLoader.getInstance(a).onNetworkChanged(isSlow);
                     }
@@ -248,18 +252,25 @@ public class ApplicationLoader extends Application {
 
         SharedConfig.loadConfig();
         SharedPrefsHelper.init(applicationContext);
+        int maxAccount = 0;
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
-            UserConfig.getInstance(a).loadConfig();
-            MessagesController.getInstance(a);
-            if (a == 0) {
-                SharedConfig.pushStringStatus = "__FIREBASE_GENERATING_SINCE_" + ConnectionsManager.getInstance(a).getCurrentTime() + "__";
-            } else {
-                ConnectionsManager.getInstance(a);
-            }
-            TLRPC.User user = UserConfig.getInstance(a).getCurrentUser();
-            if (user != null) {
-                MessagesController.getInstance(a).putUser(user, true);
-                SendMessagesHelper.getInstance(a).checkUnsentMessages();
+            SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("userconfig" + a, Context.MODE_PRIVATE);
+            if (a == 0 || preferences.contains("currentUser") || preferences.contains("user")) {
+                UserConfig.getInstance(a).loadConfig();
+                MessagesController.getInstance(a);
+                if (a == 0) {
+                    SharedConfig.pushStringStatus = "__FIREBASE_GENERATING_SINCE_" + ConnectionsManager.getInstance(a).getCurrentTime() + "__";
+                } else {
+                    ConnectionsManager.getInstance(a);
+                }
+                TLRPC.User user = UserConfig.getInstance(a).getCurrentUser();
+                if (user != null) {
+                    MessagesController.getInstance(a).putUser(user, true);
+                    SendMessagesHelper.getInstance(a).checkUnsentMessages();
+                }
+                maxAccount = a;
+            } else if (a > maxAccount + 5) {
+                break;
             }
         }
 
@@ -271,6 +282,10 @@ public class ApplicationLoader extends Application {
 
         MediaController.getInstance();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
+            if (!UserConfig.hasInstance(a) && a != 0) {
+                if (a > 10) break;
+                continue;
+            }
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }

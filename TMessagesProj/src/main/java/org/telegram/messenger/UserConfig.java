@@ -25,8 +25,8 @@ import java.util.Arrays;
 public class UserConfig extends BaseController {
 
     public static int selectedAccount;
-    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 10;
-    public final static int MAX_ACCOUNT_COUNT = 10;
+    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 999999;
+    public final static int MAX_ACCOUNT_COUNT = 999999;
 
     private final Object sync = new Object();
     private volatile boolean configLoaded;
@@ -99,14 +99,29 @@ public class UserConfig extends BaseController {
         return localInstance;
     }
 
-    public static int getActivatedAccountsCount() {
-        int count = 0;
+    public static boolean hasInstance(int a) {
+        return a >= 0 && a < Instance.length && Instance[a] != null;
+    }
+
+    public static ArrayList<Integer> getActivatedAccounts() {
+        ArrayList<Integer> accounts = new ArrayList<>();
+        int emptyCount = 0;
         for (int a = 0; a < MAX_ACCOUNT_COUNT; a++) {
-            if (AccountInstance.getInstance(a).getUserConfig().isClientActivated()) {
-                count++;
+            if (isValidAccount(a)) {
+                accounts.add(a);
+                emptyCount = 0;
+            } else {
+                emptyCount++;
+                if (emptyCount > 10 && a > 10) {
+                    break;
+                }
             }
         }
-        return count;
+        return accounts;
+    }
+
+    public static int getActivatedAccountsCount() {
+        return getActivatedAccounts().size();
     }
 
     public UserConfig(int instance) {
@@ -114,8 +129,9 @@ public class UserConfig extends BaseController {
     }
 
     public static boolean hasPremiumOnAccounts() {
-        for (int a = 0; a < MAX_ACCOUNT_COUNT; a++) {
-            if (AccountInstance.getInstance(a).getUserConfig().isClientActivated() && AccountInstance.getInstance(a).getUserConfig().getUserConfig().isPremium()) {
+        ArrayList<Integer> accounts = getActivatedAccounts();
+        for (int i = 0; i < accounts.size(); i++) {
+            if (getInstance(accounts.get(i)).isPremium()) {
                 return true;
             }
         }
@@ -123,7 +139,7 @@ public class UserConfig extends BaseController {
     }
 
     public static int getMaxAccountCount() {
-        return MAX_ACCOUNT_COUNT;
+        return 999999;
     }
 
     public int getNewMessageId() {

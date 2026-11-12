@@ -1,4 +1,6 @@
 #include <jni.h>
+#include <mutex>
+#include <unordered_set>
 #include "tgnet/ApiScheme.h"
 #include "tgnet/BuffersStorage.h"
 #include "tgnet/NativeByteBuffer.h"
@@ -412,6 +414,19 @@ class Delegate : public ConnectiosManagerDelegate {
 
 };
 
+static std::mutex delegateMutex;
+static std::unordered_set<int32_t> delegateCreated;
+
+static inline ConnectionsManager& getConnectionsManager(int32_t instanceNum) {
+    ConnectionsManager& manager = ConnectionsManager::getInstance(instanceNum);
+    std::lock_guard<std::mutex> lock(delegateMutex);
+    if (delegateCreated.find(instanceNum) == delegateCreated.end()) {
+        manager.setDelegate(new Delegate());
+        delegateCreated.insert(instanceNum);
+    }
+    return manager;
+}
+
 void onHostNameResolved(JNIEnv *env, jclass c, jstring host, jlong address, jstring ip) {
     const char *ipStr = env->GetStringUTFChars(ip, 0);
     const char *hostStr = env->GetStringUTFChars(host, 0);
@@ -474,7 +489,7 @@ void init(JNIEnv *env, jclass c, jint instanceNum, jint version, jint layer, jin
     const char *installerIdStr = env->GetStringUTFChars(installerId, 0);
     const char *packageIdStr = env->GetStringUTFChars(packageId, 0);
 
-    ConnectionsManager::getInstance(instanceNum).init((uint32_t) version, layer, apiId, std::string(deviceModelStr), std::string(systemVersionStr), std::string(appVersionStr), std::string(langCodeStr), std::string(systemLangCodeStr), std::string(configPathStr), std::string(logPathStr), std::string(regIdStr), std::string(cFingerprintStr), std::string(installerIdStr), std::string(packageIdStr), timezoneOffset, userId, userPremium, true, enablePushConnection, hasNetwork, networkType, performanceClass);
+    getConnectionsManager(instanceNum).init((uint32_t) version, layer, apiId, std::string(deviceModelStr), std::string(systemVersionStr), std::string(appVersionStr), std::string(langCodeStr), std::string(systemLangCodeStr), std::string(configPathStr), std::string(logPathStr), std::string(regIdStr), std::string(cFingerprintStr), std::string(installerIdStr), std::string(packageIdStr), timezoneOffset, userId, userPremium, true, enablePushConnection, hasNetwork, networkType, performanceClass);
 
     if (deviceModelStr != 0) {
         env->ReleaseStringUTFChars(deviceModel, deviceModelStr);
@@ -513,9 +528,7 @@ void init(JNIEnv *env, jclass c, jint instanceNum, jint version, jint layer, jin
 
 void setJava(JNIEnv *env, jclass c, jboolean useJavaByteBuffers) {
     ConnectionsManager::useJavaVM(java, useJavaByteBuffers);
-    for (int a = 0; a < MAX_ACCOUNT_COUNT; a++) {
-        ConnectionsManager::getInstance(a).setDelegate(new Delegate());
-    }
+    getConnectionsManager(0);
 }
 
 static const char *ConnectionsManagerClassPathName = "org/telegram/tgnet/ConnectionsManager";

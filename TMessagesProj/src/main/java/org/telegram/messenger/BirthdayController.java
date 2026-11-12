@@ -19,17 +19,11 @@ import java.util.Set;
 public class BirthdayController {
 
     private static volatile BirthdayController[] Instance = new BirthdayController[UserConfig.MAX_ACCOUNT_COUNT];
-    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
-    static {
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            lockObjects[i] = new Object();
-        }
-    }
 
     public static BirthdayController getInstance(int num) {
         BirthdayController localInstance = Instance[num];
         if (localInstance == null) {
-            synchronized (lockObjects[num]) {
+            synchronized (BirthdayController.class) {
                 localInstance = Instance[num];
                 if (localInstance == null) {
                     Instance[num] = localInstance = new BirthdayController(num);

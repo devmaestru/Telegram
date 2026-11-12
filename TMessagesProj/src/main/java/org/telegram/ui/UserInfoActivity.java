@@ -301,8 +301,10 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private final ArrayList<Integer> accountNumbers = new ArrayList<>();
     private void updateAccounts() {
         accountNumbers.clear();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a) {
+        ArrayList<Integer> accounts = UserConfig.getActivatedAccounts();
+        for (int i = 0; i < accounts.size(); i++) {
+            int a = accounts.get(i);
+            if (currentAccount != a) {
                 accountNumbers.add(a);
             }
         }
@@ -431,7 +433,7 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             for (int i = 0; i < accountNumbers.size(); ++i) {
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
             }
-            if (!UserConfig.hasPremiumOnAccounts()) {
+            if (UserConfig.MAX_ACCOUNT_COUNT > UserConfig.MAX_ACCOUNT_DEFAULT_COUNT && !UserConfig.hasPremiumOnAccounts()) {
                 final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
                 items.add(UItem.asShadow(
                     TextUtils.concat(
@@ -471,18 +473,13 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     @Override
     protected void onClick(UItem item, View view, int position, float x, float y) {
         if (item.id == BUTTON_ADD_ACCOUNT) {
-            int freeAccounts = 0;
+            int freeAccounts = UserConfig.MAX_ACCOUNT_COUNT - UserConfig.getActivatedAccountsCount();
             Integer availableAccount = null;
-            for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
+            for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                 if (!UserConfig.getInstance(a).isClientActivated()) {
-                    freeAccounts++;
-                    if (availableAccount == null) {
-                        availableAccount = a;
-                    }
+                    availableAccount = a;
+                    break;
                 }
-            }
-            if (!UserConfig.hasPremiumOnAccounts()) {
-                freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
             }
             if (freeAccounts > 0 && availableAccount != null) {
                 presentFragment(new LoginActivity(availableAccount));

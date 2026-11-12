@@ -40,16 +40,11 @@ import java.util.List;
 public class SMSJobController implements NotificationCenter.NotificationCenterDelegate {
 
     private static volatile SMSJobController[] Instance = new SMSJobController[UserConfig.MAX_ACCOUNT_COUNT];
-    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
-    static {
-        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
-            lockObjects[i] = new Object();
-        }
-    }
+
     public static SMSJobController getInstance(int num) {
         SMSJobController localInstance = Instance[num];
         if (localInstance == null) {
-            synchronized (lockObjects[num]) {
+            synchronized (SMSJobController.class) {
                 localInstance = Instance[num];
                 if (localInstance == null) {
                     Instance[num] = localInstance = new SMSJobController(num);

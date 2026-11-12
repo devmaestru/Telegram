@@ -724,8 +724,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         items.add(UItem.asCustomShadow(topView, 200 - 12));
 
         accountNumbers.clear();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a) {
+        ArrayList<Integer> accounts = UserConfig.getActivatedAccounts();
+        for (int i = 0; i < accounts.size(); i++) {
+            int a = accounts.get(i);
+            if (currentAccount != a) {
                 accountNumbers.add(a);
             }
         }

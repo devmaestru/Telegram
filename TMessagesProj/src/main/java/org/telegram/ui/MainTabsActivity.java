@@ -623,11 +623,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         final ArrayList<Integer> accountNumbers = new ArrayList<>();
 
         accountNumbers.clear();
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            if (UserConfig.getInstance(a).isClientActivated()) {
-                accountNumbers.add(a);
-            }
-        }
+        accountNumbers.addAll(UserConfig.getActivatedAccounts());
         Collections.sort(accountNumbers, (o1, o2) -> {
             long l1 = UserConfig.getInstance(o1).loginTime;
             long l2 = UserConfig.getInstance(o2).loginTime;
@@ -642,18 +638,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         ItemOptions o = ItemOptions.makeOptions(this, button);
         if (UserConfig.getActivatedAccountsCount() < UserConfig.MAX_ACCOUNT_COUNT) {
             o.add(R.drawable.msg_addbot, getString(R.string.AddAccount), () -> {
-                int freeAccounts = 0;
+                int freeAccounts = UserConfig.MAX_ACCOUNT_COUNT - UserConfig.getActivatedAccountsCount();
                 Integer availableAccount = null;
-                for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                     if (!UserConfig.getInstance(a).isClientActivated()) {
-                        freeAccounts++;
-                        if (availableAccount == null) {
-                            availableAccount = a;
-                        }
+                        availableAccount = a;
+                        break;
                     }
-                }
-                if (!UserConfig.hasPremiumOnAccounts()) {
-                    freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
                 }
                 if (freeAccounts > 0 && availableAccount != null) {
                     presentFragment(new LoginActivity(availableAccount));

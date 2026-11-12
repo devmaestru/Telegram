@@ -132,18 +132,13 @@ public class LogoutActivity extends BaseFragment {
         listView.setAdapter(listAdapter);
         listView.setOnItemClickListener((view, position, x, y) -> {
             if (position == addAccountRow) {
-                int freeAccounts = 0;
+                int freeAccounts = UserConfig.MAX_ACCOUNT_COUNT - UserConfig.getActivatedAccountsCount();
                 Integer availableAccount = null;
-                for (int a = UserConfig.MAX_ACCOUNT_COUNT - 1; a >= 0; a--) {
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                     if (!UserConfig.getInstance(a).isClientActivated()) {
-                        freeAccounts++;
-                        if (availableAccount == null) {
-                            availableAccount = a;
-                        }
+                        availableAccount = a;
+                        break;
                     }
-                }
-                if (!UserConfig.hasPremiumOnAccounts()) {
-                    freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
                 }
                 if (freeAccounts > 0 && availableAccount != null) {
                     presentFragment(new LoginActivity(availableAccount));
